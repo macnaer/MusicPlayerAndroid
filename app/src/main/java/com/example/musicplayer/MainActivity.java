@@ -5,33 +5,35 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
-import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.SeekBar;
 
+import java.util.Timer;
+import java.util.TimerTask;
 public class MainActivity extends AppCompatActivity {
 
     MediaPlayer mediaPlayer;
-    Button button;
-    SeekBar volumeSeekBar;
-    AudioManager audioManager;
+    ImageView playPauseIcon;
+    SeekBar seekBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        audioManager = (AudioManager)getSystemService(AUDIO_SERVICE);
-        int maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
 
-        volumeSeekBar = findViewById(R.id.volumeSeekBar);
-        volumeSeekBar.setMax(maxVolume);
-        volumeSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+        playPauseIcon = findViewById(R.id.playIconImageView);
+
+        mediaPlayer = MediaPlayer.create(getApplicationContext(), R.raw.dzidzo);
+
+        seekBar = findViewById(R.id.seekBar);
+        seekBar.setMax(mediaPlayer.getDuration());
+        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-//                Log.d("Progress changed: ", "" + progress);
-                audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, progress, 0);
-
+                if (fromUser) {
+                    mediaPlayer.seekTo(progress);
+                }
             }
 
             @Override
@@ -45,28 +47,36 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        button = findViewById(R.id.playButton);
-        button.setOnClickListener(new View.OnClickListener() {
+        new Timer().scheduleAtFixedRate(new TimerTask() {
             @Override
-            public void onClick(View v) {
-                if (mediaPlayer.isPlaying()) {
-                    pause();
-                } else {
-                    play();
-                }
+            public void run() {
+                seekBar.setProgress(mediaPlayer.getCurrentPosition());
             }
-        });
-
-        mediaPlayer = MediaPlayer.create(getApplicationContext(), R.raw.dzidzo);
+        }, 0, 1000);
     }
 
-    public void play() {
-        mediaPlayer.start();
-        button.setText("Pause");
-    }
-
-    public void pause() {
+    public void previous(View view) {
+        seekBar.setProgress(0);
+        mediaPlayer.seekTo(0);
         mediaPlayer.pause();
-        button.setText("Play");
+        playPauseIcon.setImageResource(R.drawable.ic_play_arrow_orange_24dp);
     }
+
+    public void next(View view) {
+        seekBar.setProgress(mediaPlayer.getDuration());
+        mediaPlayer.seekTo(mediaPlayer.getDuration());
+        mediaPlayer.pause();
+        playPauseIcon.setImageResource(R.drawable.ic_play_arrow_orange_24dp);
+    }
+
+    public void play(View view) {
+        if (mediaPlayer.isPlaying()) {
+            mediaPlayer.pause();
+            playPauseIcon.setImageResource(R.drawable.ic_play_arrow_orange_24dp);
+        } else {
+            mediaPlayer.start();
+            playPauseIcon.setImageResource(R.drawable.ic_pause_orange_24dp);
+        }
+    }
+
 }
